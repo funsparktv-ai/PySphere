@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Python Editor</title>
+    <title>Online Python Interpreter</title>
     <style>
         #editor {
             height: 400px;
@@ -19,7 +19,6 @@
 </head>
 <body>
     <div id="editor">print("Hello, world!")</div>
-    <button onclick="executePython()">Run</button>
     <div id="output"></div>
 
     <!-- Include Ace Editor -->
@@ -34,17 +33,23 @@
             editor = ace.edit("editor");
             editor.setTheme("ace/theme/monokai");
             editor.session.setMode("ace/mode/python");
-            editor.setReadOnly(false); // Allow editing
+
+            editor.on("change", () => {
+                executePython(); // Execute Python code whenever it's changed
+            });
         });
 
         async function executePython() {
             let code = editor.getValue();
+            let outputDiv = document.getElementById("output");
+            outputDiv.innerHTML = "Executing...";
+
             let pyodide = await loadPyodide({ indexURL: 'https://cdn.jsdelivr.net/pyodide/v0.18.1/full/' });
             try {
                 let output = await pyodide.runPythonAsync(code);
-                document.getElementById("output").innerText = output;
+                outputDiv.innerText = output;
             } catch (err) {
-                document.getElementById("output").innerText = err.message;
+                outputDiv.innerText = err.message;
             }
         }
     </script>
