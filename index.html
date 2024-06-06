@@ -34,6 +34,7 @@
             editor = ace.edit("editor");
             editor.setTheme("ace/theme/monokai");
             editor.session.setMode("ace/mode/python");
+            editor.setReadOnly(false); // Allow editing
         });
 
         async function executePython() {
