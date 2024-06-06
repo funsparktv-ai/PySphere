@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Python Editor</title>
+    <style>
+        #editor {
+            height: 400px;
+            width: 100%;
+            border: 1px solid #ccc;
+            margin-bottom: 10px;
+        }
+        #output {
+            border: 1px solid #ccc;
+            padding: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div id="editor">print("Hello, world!")</div>
+    <button onclick="executePython()">Run</button>
+    <div id="output"></div>
+
+    <!-- Include Ace Editor -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.13/ace.js" integrity="sha512-QAvlCb00p+MDupcdCnYvOyrntzHn7mNhC6UMXkpO+m3bAxB8ZGEOEZTkDLwnN4JJ7YY+LvOozZoouLkddmFHzA==" crossorigin="anonymous"></script>
+    <!-- Include Pyodide -->
+    <script src="https://cdn.jsdelivr.net/pyodide/v0.18.1/full/pyodide.js"></script>
+    <script>
+        let editor;
+
+        // Initialize Ace Editor
+        document.addEventListener('DOMContentLoaded', () => {
+            editor = ace.edit("editor");
+            editor.setTheme("ace/theme/monokai");
+            editor.session.setMode("ace/mode/python");
+        });
+
+        async function executePython() {
+            let code = editor.getValue();
+            let pyodide = await loadPyodide();
+            try {
+                let output = await pyodide.runPythonAsync(code);
+                document.getElementById("output").innerText = output;
+            } catch (err) {
+                document.getElementById("output").innerText = err;
+            }
+        }
+    </script>
+</body>
+</html>
