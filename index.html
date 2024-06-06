@@ -38,12 +38,12 @@
 
         async function executePython() {
             let code = editor.getValue();
-            let pyodide = await loadPyodide();
+            let pyodide = await loadPyodide({ indexURL: 'https://cdn.jsdelivr.net/pyodide/v0.18.1/full/' });
             try {
                 let output = await pyodide.runPythonAsync(code);
                 document.getElementById("output").innerText = output;
             } catch (err) {
-                document.getElementById("output").innerText = err;
+                document.getElementById("output").innerText = err.message;
             }
         }
     </script>
