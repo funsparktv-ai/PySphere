@@ -4,54 +4,63 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Online Python Interpreter</title>
+    <script src="https://cdn.jsdelivr.net/npm/skulpt@1.0.0/dist/skulpt.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/skulpt@1.0.0/dist/skulpt-stdlib.js"></script>
     <style>
-        #editor {
-            height: 400px;
-            width: 100%;
-            border: 1px solid #ccc;
-            margin-bottom: 10px;
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
         }
         #output {
-            border: 1px solid #ccc;
+            background-color: #f0f0f0;
             padding: 10px;
+            margin-top: 10px;
+        }
+        #runButton {
+            margin-top: 10px;
         }
     </style>
 </head>
 <body>
-    <div id="editor">print("Hello, world!")</div>
-    <div id="output"></div>
+    <h1>Online Python Interpreter</h1>
+    <textarea id="code" rows="10" cols="50">
+print("Hello, World!")
+    </textarea>
+    <br>
+    <button id="runButton">Run</button>
+    <pre id="output"></pre>
 
-    <!-- Include Ace Editor -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.13/ace.js" integrity="sha512-QAvlCb00p+MDupcdCnYvOyrntzHn7mNhC6UMXkpO+m3bAxB8ZGEOEZTkDLwnN4JJ7YY+LvOozZoouLkddmFHzA==" crossorigin="anonymous"></script>
-    <!-- Include Pyodide -->
-    <script src="https://cdn.jsdelivr.net/pyodide/v0.18.1/full/pyodide.js"></script>
     <script>
-        let editor;
-
-        // Initialize Ace Editor
-        document.addEventListener('DOMContentLoaded', () => {
-            editor = ace.edit("editor");
-            editor.setTheme("ace/theme/monokai");
-            editor.session.setMode("ace/mode/python");
-
-            editor.on("change", () => {
-                executePython(); // Execute Python code whenever it's changed
-            });
-        });
-
-        async function executePython() {
-            let code = editor.getValue();
-            let outputDiv = document.getElementById("output");
-            outputDiv.innerHTML = "Executing...";
-
-            let pyodide = await loadPyodide({ indexURL: 'https://cdn.jsdelivr.net/pyodide/v0.18.1/full/' });
-            try {
-                let output = await pyodide.runPythonAsync(code);
-                outputDiv.innerText = output;
-            } catch (err) {
-                outputDiv.innerText = err.message;
-            }
+        function builtinRead(x) {
+            if (Sk.builtinFiles === undefined || Sk.builtinFiles["files"][x] === undefined)
+                throw "File not found: '" + x + "'";
+            return Sk.builtinFiles["files"][x];
         }
+
+        function runCode() {
+            var prog = document.getElementById("code").value;
+            var mypre = document.getElementById("output");
+            mypre.innerHTML = '';
+            Sk.pre = "output";
+            Sk.configure({ output: outf, read: builtinRead });
+            (Sk.TurtleGraphics || (Sk.TurtleGraphics = {})).target = 'mycanvas';
+            var myPromise = Sk.misceval.asyncToPromise(function() {
+                return Sk.importMainWithBody("<stdin>", false, prog, true);
+            });
+            myPromise.then(function(mod) {
+                console.log('success');
+            },
+                function(err) {
+                    mypre.innerHTML = err.toString();
+                });
+        }
+
+        function outf(text) {
+            var mypre = document.getElementById("output");
+            mypre.innerHTML = mypre.innerHTML + text;
+        }
+
+        document.getElementById("runButton").onclick = runCode;
     </script>
 </body>
 </html>
