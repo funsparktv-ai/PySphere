@@ -9,33 +9,54 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/theme/eclipse.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/addon/hint/show-hint.min.css">
     <style>
+        :root {
+            --bg-color: #ffffff;
+            --text-color: #333333;
+            --button-bg: #007BFF;
+            --button-bg-hover: #0056b3;
+            --editor-bg: #ffffff;
+            --editor-border: #cccccc;
+            --output-bg: #f0f0f0;
+        }
+
+        body.dark-mode {
+            --bg-color: #1e1e1e;
+            --text-color: #cfcfcf;
+            --button-bg: #444444;
+            --button-bg-hover: #222222;
+            --editor-bg: #2d2d2d;
+            --editor-border: #555555;
+            --output-bg: #333333;
+        }
+
         body {
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        margin: 0;
-        padding: 0;
-        background-color: #ffffff; /* Set background to white */
-        color: #333;
-    }
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+        }
 
         .container {
             max-width: 90%;
             margin: 20px auto;
             padding: 20px;
-            background-color: #fff;
+            background-color: var(--bg-color);
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
             border-radius: 8px;
         }
 
         h1 {
             font-size: 24px;
-            color: #333;
+            color: var(--text-color);
             margin-bottom: 20px;
             text-align: center;
         }
 
         .CodeMirror {
             height: auto;
-            border: 1px solid #ccc;
+            background-color: var(--editor-bg);
+            border: 1px solid var(--editor-border);
             border-radius: 4px;
         }
 
@@ -48,7 +69,7 @@
             padding: 10px 20px;
             font-size: 16px;
             color: #fff;
-            background-color: #007BFF;
+            background-color: var(--button-bg);
             border: none;
             border-radius: 4px;
             cursor: pointer;
@@ -56,15 +77,19 @@
         }
 
         button:hover {
-            background-color: #0056b3;
+            background-color: var(--button-bg-hover);
         }
 
         #output {
             margin-top: 20px;
             padding: 10px;
-            background-color: #f0f0f0;
-            border: solid 1px #ddd;
+            background-color: var(--output-bg);
+            border: solid 1px var(--editor-border);
             border-radius: 4px;
+        }
+
+        #themeToggle {
+            margin-left: 10px;
         }
     </style>
 </head>
@@ -75,6 +100,7 @@
         <div class="button-container">
             <button id="runButton">Run Locally</button>
             <button id="saveButton">Save</button>
+            <button id="themeToggle">Toggle Dark Mode</button>
         </div>
         <pre id="output"></pre>
     </div>
@@ -126,6 +152,10 @@
         document.getElementById("runButton").onclick = runCode;
         document.getElementById("saveButton").onclick = function() {
             localStorage.setItem('pythonCode', editor.getValue());
+        };
+
+        document.getElementById("themeToggle").onclick = function() {
+            document.body.classList.toggle('dark-mode');
         };
 
         function loadCode() {
