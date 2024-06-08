@@ -6,9 +6,14 @@
     <title>Online Python Interpreter</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/codemirror.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/theme/eclipse.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/addon/hint/show-hint.min.css">
     <link rel="stylesheet" href="styles.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/codemirror.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/mode/python/python.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/addon/hint/show-hint.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/addon/hint/python-hint.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/skulpt@1.0.0/dist/skulpt.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/skulpt@1.0.0/dist/skulpt-stdlib.js"></script>
 </head>
 <body>
     <div class="container">
@@ -17,7 +22,6 @@
         <div class="button-container">
             <button id="runButton">Run Locally</button>
             <button id="saveButton">Save</button>
-            <button id="runServerButton">Run on Server</button>
         </div>
         <pre id="output"></pre>
     </div>
@@ -28,7 +32,15 @@
             mode: "python",
             theme: "eclipse",
             gutters: ["CodeMirror-linenumbers", "CodeMirror-lint-markers"],
-            lint: true
+            lint: true,
+            extraKeys: {"Ctrl-Space": "autocomplete"},
+            hintOptions: {completeSingle: false}
+        });
+
+        editor.on("inputRead", function(editor, input) {
+            if (input.text[0] === ';' || input.text[0] === ' ' || input.text[0] === '.') {
+                editor.showHint(); // trigger autocomplete when ';' or ' ' or '.' is typed
+            }
         });
 
         function builtinRead(x) {
@@ -43,7 +55,6 @@
             mypre.innerHTML = '';
             Sk.pre = "output";
             Sk.configure({ output: outf, read: builtinRead });
-            (Sk.TurtleGraphics || (Sk.TurtleGraphics = {})).target = 'mycanvas';
             var myPromise = Sk.misceval.asyncToPromise(function() {
                 return Sk.importMainWithBody("<stdin>", false, prog, true);
             });
@@ -52,69 +63,18 @@
             },
             function(err) {
                 mypre.innerHTML = err.toString();
-                highlightError(err.toString());
             });
-        }
-
-        function runCodeOnServer() {
-            var prog = editor.getValue();
-            var mypre = document.getElementById("output");
-            mypre.innerHTML = 'Running code on server...';
-
-            fetch('https://your-backend-url.com/run_code', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ code: prog })
-            })
-            .then(response => response.json())
-            .then(data => {
-                mypre.innerHTML = data.output;
-            })
-            .catch(error => {
-                mypre.innerHTML = 'Error: ' + error;
-            });
-        }
-
-        function highlightError(errorText) {
-            var errorLine = getErrorLineNumber(errorText);
-            if (errorLine !== null) {
-                editor.addLineClass(errorLine - 1, 'background', 'line-error');
-            }
-        }
-
-        function getErrorLineNumber(errorText) {
-            var regex = /on line (\d+)/;
-            var match = regex.exec(errorText);
-            if (match) {
-                return parseInt(match[1], 10);
-            }
-            return null;
         }
 
         function outf(text) {
             var mypre = document.getElementById("output");
-            mypre.innerHTML = mypre.innerHTML + text;
+            mypre.innerHTML += text;
         }
 
-        document.getElementById("runButton").onclick = function() {
-            editor.operation(function() {
-                editor.eachLine(function(line) {
-                    editor.removeLineClass(line, 'background', 'line-error');
-                });
-            });
-            runCode();
-        };
-
+        document.getElementById("runButton").onclick = runCode;
         document.getElementById("saveButton").onclick = function() {
-            var code = editor.getValue();
-            localStorage.setItem('savedCode', code);
+            localStorage.setItem('savedCode', editor.getValue());
             alert('Code saved successfully!');
-        };
-
-        document.getElementById("runServerButton").onclick = function() {
-            runCodeOnServer();
         };
 
         function loadCode() {
