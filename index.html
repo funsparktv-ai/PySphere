@@ -8,34 +8,20 @@
     <script src="https://cdn.jsdelivr.net/npm/skulpt@1.0.0/dist/skulpt-stdlib.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/codemirror.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/theme/eclipse.min.css">
+    <link rel="stylesheet" href="styles.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/codemirror.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/mode/python/python.min.js"></script>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-        }
-        #output {
-            background-color: #f0f0f0;
-            padding: 10px;
-            margin-top: 10px;
-        }
-        #runButton {
-            margin-top: 10px;
-        }
-        .CodeMirror {
-            border: 1px solid #ccc;
-            height: auto;
-        }
-    </style>
 </head>
 <body>
-    <h1>Online Python Interpreter</h1>
-    <textarea id="code" name="code"></textarea>
-    <br>
-    <button id="runButton">Run</button>
-    <button id="saveButton">Save</button>
-    <pre id="output"></pre>
+    <div class="container">
+        <h1>Python Interpreter</h1>
+        <textarea id="code" name="code"></textarea>
+        <div class="button-container">
+            <button id="runButton">Run</button>
+            <button id="saveButton">Save</button>
+        </div>
+        <pre id="output"></pre>
+    </div>
 
     <script>
         var editor = CodeMirror.fromTextArea(document.getElementById("code"), {
@@ -116,10 +102,5 @@
 
         window.onload = loadCode;
     </script>
-    <style>
-        .line-error {
-            background-color: #fdd;
-        }
-    </style>
 </body>
 </html>
