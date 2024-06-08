@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Online Python Interpreter</title>
+    <link href="https://fonts.googleapis.com/css2?family=Segoe+UI:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/codemirror.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/theme/eclipse.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/addon/hint/show-hint.min.css">
@@ -17,7 +18,7 @@
 </head>
 <body>
     <div class="container">
-        <h1>Online Python Interpreter</h1>
+        <h1>PySphere - An Online Python Interpreter</h1>
         <textarea id="code" name="code"></textarea>
         <div class="button-container">
             <button id="runButton">Run Locally</button>
@@ -25,22 +26,15 @@
         </div>
         <pre id="output"></pre>
     </div>
-
     <script>
-        var editor = CodeMirror.fromTextArea(document.getElementById("code"), {
-            lineNumbers: true,
+        var editor = CodeMirror.fromTextArea(document.getElementById('code'), {
             mode: "python",
             theme: "eclipse",
-            gutters: ["CodeMirror-linenumbers", "CodeMirror-lint-markers"],
-            lint: true,
-            extraKeys: {"Ctrl-Space": "autocomplete"},
-            hintOptions: {completeSingle: false}
-        });
-
-        editor.on("inputRead", function(editor, input) {
-            if (input.text[0] === ';' || input.text[0] === ' ' || input.text[0] === '.') {
-                editor.showHint(); // trigger autocomplete when ';' or ' ' or '.' is typed
-            }
+            lineNumbers: true,
+            autoCloseBrackets: true,
+            matchBrackets: true,
+            showCursorWhenSelecting: true,
+            extraKeys: {"Ctrl-Space": "autocomplete"}
         });
 
         function builtinRead(x) {
@@ -55,15 +49,16 @@
             mypre.innerHTML = '';
             Sk.pre = "output";
             Sk.configure({ output: outf, read: builtinRead });
+            (Sk.TurtleGraphics || (Sk.TurtleGraphics = {})).target = 'mycanvas';
             var myPromise = Sk.misceval.asyncToPromise(function() {
                 return Sk.importMainWithBody("<stdin>", false, prog, true);
             });
             myPromise.then(function(mod) {
                 console.log('success');
             },
-            function(err) {
-                mypre.innerHTML = err.toString();
-            });
+                function(err) {
+                    mypre.innerHTML = err.toString();
+                });
         }
 
         function outf(text) {
@@ -73,14 +68,13 @@
 
         document.getElementById("runButton").onclick = runCode;
         document.getElementById("saveButton").onclick = function() {
-            localStorage.setItem('savedCode', editor.getValue());
-            alert('Code saved successfully!');
+            localStorage.setItem('pythonCode', editor.getValue());
         };
 
         function loadCode() {
-            var savedCode = localStorage.getItem('savedCode');
-            if (savedCode) {
-                editor.setValue(savedCode);
+            var storedCode = localStorage.getItem('pythonCode');
+            if (storedCode) {
+                editor.setValue(storedCode);
             }
         }
 
