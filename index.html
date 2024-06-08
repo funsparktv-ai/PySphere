@@ -18,6 +18,7 @@
             --editor-border: #cccccc;
             --output-bg: #f0f0f0;
             --line-number-color: #333333;
+            --editor-text-color: #000000;
         }
 
         body.dark-mode {
@@ -29,6 +30,7 @@
             --editor-border: #555555;
             --output-bg: #333333;
             --line-number-color: #e0e0e0;
+            --editor-text-color: #ffffff;
         }
 
         body {
@@ -60,6 +62,7 @@
             background-color: var(--editor-bg);
             border: 1px solid var(--editor-border);
             border-radius: 4px;
+            color: var(--editor-text-color);
         }
 
         .CodeMirror-linenumber {
@@ -172,7 +175,7 @@
                     if (name.indexOf(word) === 0) list.push(name);
                 }
             } else if (token.type === "property") {
-                var objName = token.state.context.vars[token.state.context.vars.length - 2];
+                var objName = cm.getTokenAt({line: cur.line, ch: token.start}).string;
                 if (globalScope[objName] && globalScope[objName].tp$getattr) {
                     var obj = globalScope[objName];
                     for (var attr in obj.tp$getattr) {
@@ -193,6 +196,7 @@
 
         document.getElementById("themeToggle").onclick = function() {
             document.body.classList.toggle('dark-mode');
+            editor.setOption("theme", document.body.classList.contains('dark-mode') ? "monokai" : "eclipse");
         };
 
         function loadCode() {
