@@ -6,6 +6,10 @@
     <title>Online Python Interpreter</title>
     <script src="https://cdn.jsdelivr.net/npm/skulpt@1.0.0/dist/skulpt.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/skulpt@1.0.0/dist/skulpt-stdlib.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/codemirror.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/theme/eclipse.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/codemirror.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/mode/python/python.min.js"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -19,11 +23,15 @@
         #runButton {
             margin-top: 10px;
         }
+        .CodeMirror {
+            border: 1px solid #ccc;
+            height: auto;
+        }
     </style>
 </head>
 <body>
     <h1>Online Python Interpreter</h1>
-    <textarea id="code" rows="10" cols="50">
+    <textarea id="code" name="code">
 print("Hello, World!")
     </textarea>
     <br>
@@ -31,6 +39,14 @@ print("Hello, World!")
     <pre id="output"></pre>
 
     <script>
+        var editor = CodeMirror.fromTextArea(document.getElementById("code"), {
+            lineNumbers: true,
+            mode: "python",
+            theme: "eclipse",
+            gutters: ["CodeMirror-linenumbers", "CodeMirror-lint-markers"],
+            lint: true
+        });
+
         function builtinRead(x) {
             if (Sk.builtinFiles === undefined || Sk.builtinFiles["files"][x] === undefined)
                 throw "File not found: '" + x + "'";
@@ -38,7 +54,7 @@ print("Hello, World!")
         }
 
         function runCode() {
-            var prog = document.getElementById("code").value;
+            var prog = editor.getValue();
             var mypre = document.getElementById("output");
             mypre.innerHTML = '';
             Sk.pre = "output";
@@ -50,9 +66,26 @@ print("Hello, World!")
             myPromise.then(function(mod) {
                 console.log('success');
             },
-                function(err) {
-                    mypre.innerHTML = err.toString();
-                });
+            function(err) {
+                mypre.innerHTML = err.toString();
+                highlightError(err.toString());
+            });
+        }
+
+        function highlightError(errorText) {
+            var errorLine = getErrorLineNumber(errorText);
+            if (errorLine !== null) {
+                editor.addLineClass(errorLine - 1, 'background', 'line-error');
+            }
+        }
+
+        function getErrorLineNumber(errorText) {
+            var regex = /on line (\d+)/;
+            var match = regex.exec(errorText);
+            if (match) {
+                return parseInt(match[1], 10);
+            }
+            return null;
         }
 
         function outf(text) {
@@ -60,7 +93,19 @@ print("Hello, World!")
             mypre.innerHTML = mypre.innerHTML + text;
         }
 
-        document.getElementById("runButton").onclick = runCode;
+        document.getElementById("runButton").onclick = function() {
+            editor.operation(function() {
+                editor.eachLine(function(line) {
+                    editor.removeLineClass(line, 'background', 'line-error');
+                });
+            });
+            runCode();
+        };
     </script>
+    <style>
+        .line-error {
+            background-color: #fdd;
+        }
+    </style>
 </body>
 </html>
