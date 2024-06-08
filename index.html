@@ -4,8 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Online Python Interpreter</title>
-    <script src="https://cdn.jsdelivr.net/npm/skulpt@1.0.0/dist/skulpt.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/skulpt@1.0.0/dist/skulpt-stdlib.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/codemirror.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/theme/eclipse.min.css">
     <link rel="stylesheet" href="styles.css">
@@ -14,11 +12,12 @@
 </head>
 <body>
     <div class="container">
-        <h1>Python Interpreter</h1>
+        <h1>Online Python Interpreter</h1>
         <textarea id="code" name="code"></textarea>
         <div class="button-container">
-            <button id="runButton">Run</button>
+            <button id="runButton">Run Locally</button>
             <button id="saveButton">Save</button>
+            <button id="runServerButton">Run on Server</button>
         </div>
         <pre id="output"></pre>
     </div>
@@ -57,6 +56,27 @@
             });
         }
 
+        function runCodeOnServer() {
+            var prog = editor.getValue();
+            var mypre = document.getElementById("output");
+            mypre.innerHTML = 'Running code on server...';
+
+            fetch('https://your-backend-url.com/run_code', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ code: prog })
+            })
+            .then(response => response.json())
+            .then(data => {
+                mypre.innerHTML = data.output;
+            })
+            .catch(error => {
+                mypre.innerHTML = 'Error: ' + error;
+            });
+        }
+
         function highlightError(errorText) {
             var errorLine = getErrorLineNumber(errorText);
             if (errorLine !== null) {
@@ -91,6 +111,10 @@
             var code = editor.getValue();
             localStorage.setItem('savedCode', code);
             alert('Code saved successfully!');
+        };
+
+        document.getElementById("runServerButton").onclick = function() {
+            runCodeOnServer();
         };
 
         function loadCode() {
