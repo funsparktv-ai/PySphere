@@ -175,142 +175,9 @@
             mypre.innerHTML += text;
         }
 
-        function getSuggestions(cm, options) {
-            var cur = cm.getCursor();
-            var token = cm.getTokenAt(cur);
-            var start = token.start;
-            var end = cur.ch;
-            var word = token.string.slice(0, end - start);
-            var list = [];
-
-            var pythonKeywords = ["and", "as", "assert", "break", "class", "continue", "def", "del", "elif", "else", "except", "False", "finally", "for", "from", "global", "if", "import", "in", "is", "lambda", "None", "nonlocal", "not", "or", "pass", "raise", "return", "True", "try", "while", "with", "yield"];
-
-            if (token.type === "variable" || token.type === null) {
-                pythonKeywords.forEach(function(kw) {
-                    if (kw.indexOf(word) === 0) list.push(kw);
-                });
-                for (var name in globalScope) {
-                    if (name.indexOf(word) === 0) list.push(name);
-                }
-            } else if (token.type === "property") {
-                var objName = cm.getTokenAt({line: cur.line, ch: token.start}).string;
-                if (globalScope[objName] && globalScope[objName].tp$getattr) {
-                    var obj = globalScope[objName];
-                    for (var attr in obj.tp$getattr) {
-                        if (attr.indexOf(word) === 0) list.push(attr);
-                    }
-                }
-            }
-
-            return { list: list, from: CodeMirror.Pos(cur.line, start), to: CodeMirror.Pos(cur.line, end) };
-        }
-
-        CodeMirror.registerHelper("hint", "python", getSuggestions);
-
         document.getElementById("runButton").onclick = runCode;
         document.getElementById("saveButton").onclick = function() {
             localStorage.setItem('pythonCode', editor.getValue());
-        };
-
-        document.getElementById("presetCodes").onchange = function() {
-            var preset = document.getElementById("presetCodes").value;
-            var code = "";
-            if (preset === "bmiCalculator") {
-                code = `# BMI Calculator
-def calculate_bmi(weight, height):
-    return weight / (height ** 2)
-
-weight = float(input("Enter your weight in kg: "))
-height = float(input("Enter your height in meters: "))
-bmi = calculate_bmi(weight, height)
-print("Your BMI is:", bmi)`;
-            } else if (preset === "simpleStorage") {
-                code = `# Simple Storage System
-storage = {}
-
-def store_item(key, value):
-    storage[key] = value
-    print(f"Item stored: {key} = {value}")
-
-def retrieve_item(key):
-    return storage.get(key, "Item not found")
-
-store_item("name", "Alice")
-store_item("age", 30)
-print(retrieve_item("name"))
-print(retrieve_item("age"))`;
-            } else if (preset === "fibonacciSequence") {
-                code = `# Fibonacci Sequence
-def fibonacci(n):
-    a, b = 0, 1
-    sequence = []
-    for _ in range(n):
-        sequence.append(a)
-        a, b = b, a + b
-    return sequence
-
-n = int(input("Enter the number of terms: "))
-print("Fibonacci sequence:", fibonacci(n))`;
-            } else if (preset === "primeChecker") {
-                code = `# Prime Number Checker
-def is_prime(num):
-    if num <= 1:
-        return False
-    for i in range(2, int(num**0.5) + 1):
-        if num % i == 0:
-            return False
-    return True
-
-number = int(input("Enter a number: "))
-if is_prime(number):
-    print(f"{number} is a prime number.")
-else:
-    print(f"{number} is not a prime number.")`;
-            } else if (preset === "basicCalculator") {
-                code = `# Basic Calculator
-def add(x, y):
-    return x + y
-
-def subtract(x, y):
-    return x - y
-
-def multiply(x, y):
-    return x * y
-
-def divide(x, y):
-    if y == 0:
-        return "Cannot divide by zero!"
-    return x / y
-
-print("Select operation:")
-print("1.Add")
-print("2.Subtract")
-print("3.Multiply")
-print("4.Divide")
-
-choice = input("Enter choice(1/2/3/4): ")
-
-num1 = float(input("Enter first number: "))
-num2 = float(input("Enter second number: "))
-
-if choice == '1':
-    print(f"{num1} + {num2} =", add(num1, num2))
-elif choice == '2':
-    print(f"{num1} - {num2} =", subtract(num1, num2))
-elif choice == '3':
-    print(f"{num1} * {num2} =", multiply(num1, num2))
-elif choice == '4':
-    print(f"{num1} / {num2} =", divide(num1, num2))
-else:
-    print("Invalid input")`;
-            }
-            editor.setValue(code);
-        };
-
-        document.getElementById("themeToggle").onclick = function() {
-            document.body.classList.toggle("dark-mode");
-            var isDarkMode = document.body.classList.contains("dark-mode");
-            editor.setOption("theme", isDarkMode ? "monokai" : "eclipse");
         };
 
         function loadCode() {
@@ -321,6 +188,112 @@ else:
         }
 
         window.onload = loadCode;
+
+        document.getElementById("themeToggle").addEventListener("click", function() {
+            document.body.classList.toggle("dark-mode");
+        });
+
+        document.getElementById("presetCodes").addEventListener("change", function() {
+            var code = this.value;
+            if (code === "") return;
+            switch (code) {
+                case "bmiCalculator":
+                    editor.setValue(`# BMI Calculator
+height = float(input("Enter height in meters: "))
+weight = float(input("Enter weight in kilograms: "))
+
+bmi = weight / (height ** 2)
+print("Your BMI is:", bmi)`);
+                    break;
+                case "simpleStorage":
+                    editor.setValue(`# Simple Storage System
+storage = {}
+
+def add_item(key, value):
+    storage[key] = value
+
+def get_item(key):
+    return storage.get(key)
+
+def remove_item(key):
+    if key in storage:
+        del storage[key]
+
+# Example Usage:
+add_item("name", "John")
+add_item("age", 30)
+print(get_item("name"))
+print(get_item("age"))
+remove_item("age")
+print(get_item("age"))`);
+                    break;
+                case "fibonacciSequence":
+                    editor.setValue(`# Fibonacci Sequence
+def fibonacci(n):
+    fib_seq = [0, 1]
+    for i in range(2, n):
+        fib_seq.append(fib_seq[i-1] + fib_seq[i-2])
+    return fib_seq
+
+n = int(input("Enter the number of terms: "))
+print("Fibonacci Sequence:")
+print(fibonacci(n))`);
+                    break;
+                case "primeChecker":
+                    editor.setValue(`# Prime Number Checker
+def is_prime(num):
+    if num <= 1:
+        return False
+    for i in range(2, int(num**0.5) + 1):
+        if num % i == 0:
+            return False
+    return True
+
+num = int(input("Enter a number: "))
+if is_prime(num):
+    print(num, "is a prime number")
+else:
+    print(num, "is not a prime number")`);
+                    break;
+                case "basicCalculator":
+                    editor.setValue(`# Basic Calculator
+def add(a, b):
+    return a + b
+
+def subtract(a, b):
+    return a - b
+
+def multiply(a, b):
+    return a * b
+
+def divide(a, b):
+    if b != 0:
+        return a / b
+    else:
+        return "Cannot divide by zero"
+
+num1 = float(input("Enter first number: "))
+num2 = float(input("Enter second number: "))
+
+print("Addition:", add(num1, num2))
+print("Subtraction:", subtract(num1, num2))
+print("Multiplication:", multiply(num1, num2))
+print("Division:", divide(num1, num2))`);
+                    break;
+                default:
+                    break;
+            }
+        });
+
+        function showSuggestions(editor) {
+            CodeMirror.showHint(editor, CodeMirror.hint.python);
+        }
+
+        editor.on("inputRead", function(instance, event) {
+            if (event.origin === "delete" || event.origin === "+input") {
+                showSuggestions(instance);
+            }
+        });
     </script>
 </body>
 </html>
