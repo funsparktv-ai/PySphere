@@ -17,16 +17,18 @@
             --editor-bg: #ffffff;
             --editor-border: #cccccc;
             --output-bg: #f0f0f0;
+            --line-number-color: #333333;
         }
 
         body.dark-mode {
             --bg-color: #1e1e1e;
-            --text-color: #cfcfcf;
+            --text-color: #e0e0e0;
             --button-bg: #444444;
             --button-bg-hover: #222222;
             --editor-bg: #2d2d2d;
             --editor-border: #555555;
             --output-bg: #333333;
+            --line-number-color: #e0e0e0;
         }
 
         body {
@@ -60,6 +62,10 @@
             border-radius: 4px;
         }
 
+        .CodeMirror-linenumber {
+            color: var(--line-number-color) !important;
+        }
+
         .button-container {
             text-align: right;
             margin-top: 20px;
@@ -86,6 +92,7 @@
             background-color: var(--output-bg);
             border: solid 1px var(--editor-border);
             border-radius: 4px;
+            color: var(--text-color);
         }
 
         #themeToggle {
@@ -121,6 +128,8 @@
             extraKeys: {"Ctrl-Space": "autocomplete"}
         });
 
+        var globalScope = {};
+
         function builtinRead(x) {
             if (Sk.builtinFiles === undefined || Sk.builtinFiles["files"][x] === undefined)
                 throw "File not found: '" + x + "'";
@@ -137,6 +146,7 @@
                 return Sk.importMainWithBody("<stdin>", false, prog, true);
             });
             myPromise.then(function(mod) {
+                globalScope = mod.$d;
                 console.log('success');
             },
                 function(err) {
@@ -148,6 +158,33 @@
             var mypre = document.getElementById("output");
             mypre.innerHTML += text;
         }
+
+        function getSuggestions(cm, options) {
+            var cur = cm.getCursor();
+            var token = cm.getTokenAt(cur);
+            var start = token.start;
+            var end = cur.ch;
+            var word = token.string.slice(0, end - start);
+            var list = [];
+
+            if (token.type === "variable") {
+                for (var name in globalScope) {
+                    if (name.indexOf(word) === 0) list.push(name);
+                }
+            } else if (token.type === "property") {
+                var objName = token.state.context.vars[token.state.context.vars.length - 2];
+                if (globalScope[objName] && globalScope[objName].tp$getattr) {
+                    var obj = globalScope[objName];
+                    for (var attr in obj.tp$getattr) {
+                        if (attr.indexOf(word) === 0) list.push(attr);
+                    }
+                }
+            }
+
+            return { list: list, from: CodeMirror.Pos(cur.line, start), to: CodeMirror.Pos(cur.line, end) };
+        }
+
+        CodeMirror.registerHelper("hint", "python", getSuggestions);
 
         document.getElementById("runButton").onclick = runCode;
         document.getElementById("saveButton").onclick = function() {
