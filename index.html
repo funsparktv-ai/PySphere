@@ -31,11 +31,10 @@
 </head>
 <body>
     <h1>Online Python Interpreter</h1>
-    <textarea id="code" name="code">
-print("Hello, World!")
-    </textarea>
+    <textarea id="code" name="code"></textarea>
     <br>
     <button id="runButton">Run</button>
+    <button id="saveButton">Save</button>
     <pre id="output"></pre>
 
     <script>
@@ -101,6 +100,35 @@ print("Hello, World!")
             });
             runCode();
         };
+
+        document.getElementById("saveButton").onclick = function() {
+            var code = editor.getValue();
+            fetch('/save_code', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ code: code })
+            }).then(response => response.json())
+              .then(data => {
+                  alert(data.message);
+              }).catch(error => {
+                  console.error('Error saving code:', error);
+              });
+        };
+
+        function loadCode() {
+            fetch('/load_code')
+                .then(response => response.json())
+                .then(data => {
+                    editor.setValue(data.code);
+                })
+                .catch(error => {
+                    console.error('Error loading code:', error);
+                });
+        }
+
+        window.onload = loadCode;
     </script>
     <style>
         .line-error {
