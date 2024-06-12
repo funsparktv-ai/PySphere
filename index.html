@@ -106,11 +106,20 @@
         #presetCodes {
             margin-right: 10px;
         }
+
+        #username {
+            padding: 10px;
+            font-size: 16px;
+            margin-right: 10px;
+            border: 1px solid var(--editor-border);
+            border-radius: 4px;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>PySphere - An Online Python Interpreter</h1>
+        <input type="text" id="username" placeholder="Enter Username">
         <textarea id="code" name="code"></textarea>
         <div class="button-container">
             <select id="presetCodes">
@@ -123,6 +132,7 @@
             </select>
             <button id="runButton">Run Locally</button>
             <button id="saveButton">Save</button>
+            <button id="loadButton">Load</button>
             <button id="themeToggle">Toggle Dark Mode</button>
         </div>
         <pre id="output"></pre>
@@ -176,18 +186,34 @@
         }
 
         document.getElementById("runButton").onclick = runCode;
-        document.getElementById("saveButton").onclick = function() {
-            localStorage.setItem('pythonCode', editor.getValue());
-        };
 
-        function loadCode() {
-            var storedCode = localStorage.getItem('pythonCode');
-            if (storedCode) {
-                editor.setValue(storedCode);
+        function saveCode() {
+            var username = document.getElementById("username").value;
+            if (username) {
+                localStorage.setItem('pythonCode_' + username, editor.getValue());
+                alert("Code saved for user: " + username);
+            } else {
+                alert("Please enter a username to save your code.");
             }
         }
 
-        window.onload = loadCode;
+        function loadCode() {
+            var username = document.getElementById("username").value;
+            if (username) {
+                var storedCode = localStorage.getItem('pythonCode_' + username);
+                if (storedCode) {
+                    editor.setValue(storedCode);
+                    alert("Code loaded for user: " + username);
+                } else {
+                    alert("No code found for user: " + username);
+                }
+            } else {
+                alert("Please enter a username to load your code.");
+            }
+        }
+
+        document.getElementById("saveButton").onclick = saveCode;
+        document.getElementById("loadButton").onclick = loadCode;
 
         document.getElementById("themeToggle").addEventListener("click", function() {
             document.body.classList.toggle("dark-mode");
@@ -245,7 +271,7 @@ def is_prime(num):
     if num <= 1:
         return False
     for i in range(2, int(num**0.5) + 1):
-        if num % i == 0:
+        if num % i == 0):
             return False
     return True
 
