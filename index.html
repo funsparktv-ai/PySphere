@@ -58,6 +58,31 @@
             text-align: center;
         }
 
+        .tabs {
+            display: flex;
+            margin-bottom: 10px;
+        }
+
+        .tabs button {
+            padding: 10px 20px;
+            font-size: 16px;
+            border: none;
+            background-color: var(--button-bg);
+            color: #fff;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            border-radius: 4px 4px 0 0;
+            margin-right: 5px;
+        }
+
+        .tabs button:hover {
+            background-color: var(--button-bg-hover);
+        }
+
+        .tabs button.active {
+            background-color: var(--button-bg-hover);
+        }
+
         .CodeMirror {
             height: auto;
             background-color: var(--editor-bg);
@@ -133,6 +158,9 @@
             <label for="username">Username:</label>
             <input type="text" id="username" name="username" placeholder="Enter your username">
         </div>
+        <div class="tabs" id="tabs">
+            <button class="active" onclick="switchTab(1)">Tab 1</button>
+        </div>
         <textarea id="code" name="code"></textarea>
         <div class="button-container">
             <select id="presetCodes">
@@ -143,6 +171,7 @@
                 <option value="primeChecker">Prime Number Checker</option>
                 <option value="basicCalculator">Basic Calculator</option>
             </select>
+            <button onclick="addTab()">Add Tab</button>
             <button id="runButton">Run Locally</button>
             <button id="saveButton">Save</button>
             <button id="themeToggle">Toggle Dark Mode</button>
@@ -156,17 +185,63 @@
     <script src="https://cdn.jsdelivr.net/npm/skulpt@1.0.0/dist/skulpt.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/skulpt@1.0.0/dist/skulpt-stdlib.js"></script>
     <script>
-        var editor = CodeMirror.fromTextArea(document.getElementById('code'), {
-            mode: "python",
-            theme: "eclipse",
-            lineNumbers: true,
-            autoCloseBrackets: true,
-            matchBrackets: true,
-            showCursorWhenSelecting: true,
-            extraKeys: {"Ctrl-Space": "autocomplete"}
-        });
+        var editors = [];
+        var currentTab = 1;
 
-        var globalScope = {};
+        function initializeEditor(tabNumber) {
+            var editor = CodeMirror.fromTextArea(document.getElementById('code'), {
+                mode: "python",
+                theme: "eclipse",
+                lineNumbers: true,
+                autoCloseBrackets: true,
+                matchBrackets: true,
+                showCursorWhenSelecting: true,
+                extraKeys: {"Ctrl-Space": "autocomplete"}
+            });
+
+            editor.on("inputRead", function(instance, event) {
+                if (event.origin === "delete" || event.origin === "+input") {
+                    showSuggestions(instance);
+                }
+            });
+
+            editors[tabNumber] = editor;
+        }
+
+        function switchTab(tabNumber) {
+            currentTab = tabNumber;
+            editors.forEach((editor, index) => {
+                if (editor) {
+                    editor.getWrapperElement().style.display = (index === tabNumber ? '' : 'none');
+                }
+            });
+
+            document.querySelectorAll('.tabs button').forEach((button, index) => {
+                button.classList.toggle('active', index + 1 === tabNumber);
+            });
+
+            var code = localStorage.getItem('pythonCode_' + getUsername() + '_tab_' + currentTab);
+            editors[tabNumber].setValue(code || '');
+        }
+
+        function addTab() {
+            var tabNumber = editors.length;
+            var button = document.createElement('button');
+            button.textContent = 'Tab ' + (tabNumber + 1);
+            button.onclick = function() { switchTab(tabNumber); };
+            document.getElementById('tabs').appendChild(button);
+
+            var textarea = document.createElement('textarea');
+            textarea.id = 'code_' + tabNumber;
+            document.body.appendChild(textarea);
+
+            initializeEditor(tabNumber);
+            switchTab(tabNumber);
+        }
+
+        function getUsername() {
+            return document.getElementById('username').value;
+        }
 
         function builtinRead(x) {
             if (Sk.builtinFiles === undefined || Sk.builtinFiles["files"][x] === undefined)
@@ -175,7 +250,7 @@
         }
 
         function runCode() {
-            var prog = editor.getValue();
+            var prog = editors[currentTab].getValue();
             var mypre = document.getElementById("output");
             mypre.innerHTML = '';
             Sk.pre = "output";
@@ -184,12 +259,11 @@
                 return Sk.importMainWithBody("<stdin>", false, prog, true);
             });
             myPromise.then(function(mod) {
-                globalScope = mod.$d;
                 console.log('success');
             },
-                function(err) {
-                    mypre.innerHTML = err.toString();
-                });
+            function(err) {
+                mypre.innerHTML = err.toString();
+            });
         }
 
         function outf(text) {
@@ -197,45 +271,32 @@
             mypre.innerHTML += text;
         }
 
-        document.getElementById("runButton").onclick = runCode;
-        document.getElementById("saveButton").onclick = function() {
-            var username = document.getElementById("username").value;
-            if (username) {
-                localStorage.setItem('pythonCode_' + username, editor.getValue());
-            } else {
-                alert("Please enter a username before saving.");
+        function saveCode() {
+            if (!getUsername()) {
+                alert('Please enter a username');
+                return;
             }
-        };
+            localStorage.setItem('pythonCode_' + getUsername() + '_tab_' + currentTab, editors[currentTab].getValue());
+        }
 
         function loadCode() {
-            var username = document.getElementById("username").value;
-            if (username) {
-                var storedCode = localStorage.getItem('pythonCode_' + username);
-                if (storedCode) {
-                    editor.setValue(storedCode);
-                } else {
-                    editor.setValue('');
+            if (!getUsername()) return;
+            editors.forEach((editor, index) => {
+                var code = localStorage.getItem('pythonCode_' + getUsername() + '_tab_' + index);
+                if (editor && code) {
+                    editor.setValue(code);
                 }
-            }
+            });
         }
-
-        document.getElementById("username").addEventListener("change", loadCode);
 
         window.onload = function() {
-            var storedUsername = localStorage.getItem('currentUsername');
-            if (storedUsername) {
-                document.getElementById("username").value = storedUsername;
-                loadCode();
-            }
-        }
-
-        window.onbeforeunload = function() {
-            var username = document.getElementById("username").value;
-            if (username) {
-                localStorage.setItem('currentUsername', username);
-            }
+            initializeEditor(1);
+            loadCode();
         };
 
+        document.getElementById("username").addEventListener("change", loadCode);
+        document.getElementById("runButton").onclick = runCode;
+        document.getElementById("saveButton").onclick = saveCode;
         document.getElementById("themeToggle").addEventListener("click", function() {
             document.body.classList.toggle("dark-mode");
         });
@@ -245,7 +306,7 @@
             if (code === "") return;
             switch (code) {
                 case "bmiCalculator":
-                    editor.setValue(`# BMI Calculator
+                    editors[currentTab].setValue(`# BMI Calculator
 height = float(input("Enter height in meters: "))
 weight = float(input("Enter weight in kilograms: "))
 
@@ -253,7 +314,7 @@ bmi = weight / (height ** 2)
 print("Your BMI is:", bmi)`);
                     break;
                 case "simpleStorage":
-                    editor.setValue(`# Simple Storage System
+                    editors[currentTab].setValue(`# Simple Storage System
 storage = {}
 
 def add_item(key, value):
@@ -275,7 +336,7 @@ remove_item("age")
 print(get_item("age"))`);
                     break;
                 case "fibonacciSequence":
-                    editor.setValue(`# Fibonacci Sequence
+                    editors[currentTab].setValue(`# Fibonacci Sequence
 def fibonacci(n):
     fib_seq = [0, 1]
     for i in range(2, n):
@@ -287,7 +348,7 @@ print("Fibonacci Sequence:")
 print(fibonacci(n))`);
                     break;
                 case "primeChecker":
-                    editor.setValue(`# Prime Number Checker
+                    editors[currentTab].setValue(`# Prime Number Checker
 def is_prime(num):
     if num <= 1:
         return False
@@ -303,7 +364,7 @@ else:
     print(num, "is not a prime number")`);
                     break;
                 case "basicCalculator":
-                    editor.setValue(`# Basic Calculator
+                    editors[currentTab].setValue(`# Basic Calculator
 def add(a, b):
     return a + b
 
@@ -333,14 +394,29 @@ print("Division:", divide(num1, num2))`);
         });
 
         function showSuggestions(editor) {
-            CodeMirror.showHint(editor, CodeMirror.hint.python);
-        }
+            CodeMirror.showHint(editor, function(cm, options) {
+                var cursor = cm.getCursor();
+                var token = cm.getTokenAt(cursor);
+                var start = token.start;
+                var end = cursor.ch;
+                var word = token.string;
 
-        editor.on("inputRead", function(instance, event) {
-            if (event.origin === "delete" || event.origin === "+input") {
-                showSuggestions(instance);
-            }
-        });
+                var list = [
+                    'def', 'class', 'if', 'elif', 'else', 'for', 'while', 'return',
+                    'import', 'from', 'as', 'print', 'input', 'True', 'False', 'None',
+                    'and', 'or', 'not', 'in', 'is', 'break', 'continue', 'pass',
+                    'int', 'float', 'str', 'list', 'dict', 'set', 'tuple', 'len', 'range'
+                ].filter(function(item) {
+                    return item.indexOf(word) === 0;
+                }).sort();
+
+                return {
+                    list: list,
+                    from: CodeMirror.Pos(cursor.line, start),
+                    to: CodeMirror.Pos(cursor.line, end)
+                };
+            }, {completeSingle: false});
+        }
     </script>
 </body>
 </html>
