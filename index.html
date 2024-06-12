@@ -59,7 +59,7 @@
         }
 
         .CodeMirror {
-            height: 500px;
+            height: 400px;
             background-color: var(--editor-bg);
             border: 1px solid var(--editor-border);
             border-radius: 4px;
@@ -307,13 +307,40 @@ print(divide(10, 2))`);
             }
         });
 
-        // Load code from localStorage on page load if username is provided
-        window.onload = function() {
-            var username = document.getElementById('username').value;
-            if (username.trim()) {
-                loadCode();
+        function showSuggestions(editor) {
+            var keywords = ["print", "for", "if", "else", "elif", "while", "def", "class", "return", "import"];
+            var cursor = editor.getCursor();
+            var token = editor.getTokenAt(cursor);
+            var start = token.start;
+            var end = cursor.ch;
+            var line = cursor.line;
+            var currentWord = token.string;
+
+            if (currentWord.length > 0) {
+                var list = keywords.filter(function (item) {
+                    return item.indexOf(currentWord) === 0;
+                }).sort();
+
+                if (list.length > 0) {
+                    return {
+                        list: list,
+                        from: CodeMirror.Pos(line, start),
+                        to: CodeMirror.Pos(line, end)
+                    };
+                }
             }
-        };
+            return;
+        }
+
+        CodeMirror.registerHelper("hint", "python", function (editor) {
+            return showSuggestions(editor);
+        });
+
+        editor.on("inputRead", function(instance, event) {
+            if (event.origin === "+input") {
+                CodeMirror.commands.autocomplete(instance, null, { completeSingle: false });
+            }
+        });
     </script>
 </body>
 </html>
