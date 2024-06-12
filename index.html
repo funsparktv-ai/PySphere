@@ -9,6 +9,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/theme/eclipse.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/theme/monokai.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/addon/hint/show-hint.min.css">
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/brython@3.9.5/brython.min.js"></script>
     <style>
         :root {
             --bg-color: #ffffff;
@@ -116,7 +117,7 @@
         }
     </style>
 </head>
-<body>
+<body onload="brython()">
     <div class="container">
         <h1>PySphere - An Online Python Editor</h1>
         <input type="text" id="username" placeholder="Enter Username">
@@ -158,8 +159,8 @@
             outputElement.innerText = "Running...";
 
             try {
-                let result = eval(code);
-                outputElement.innerText = result;
+                let output = __BRYTHON__.py2js(code).to_js();
+                outputElement.innerText = output;
             } catch (err) {
                 outputElement.innerText = err;
             }
@@ -249,7 +250,7 @@ print(fibonacci(n))`);
 def is_prime(num):
     if num <= 1:
         return False
-    for i in range(2, int(num**0.5) + 1):
+    for i in range(2, int(num ** 0.5) + 1):
         if num % i == 0:
             return False
     return True
@@ -272,7 +273,7 @@ def multiply(a, b):
     return a * b
 
 def divide(a, b):
-    if b != 0:
+    if b != 0):
         return a / b
     else:
         return "Cannot divide by zero"
