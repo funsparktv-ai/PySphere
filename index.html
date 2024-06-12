@@ -130,6 +130,7 @@
                 <option value="primeChecker">Prime Number Checker</option>
                 <option value="basicCalculator">Basic Calculator</option>
             </select>
+            <button id="runButton">Run Locally</button>
             <button id="saveButton">Save</button>
             <button id="loadButton">Load</button>
             <button id="themeToggle">Toggle Dark Mode</button>
@@ -150,6 +151,19 @@
             showCursorWhenSelecting: true,
             extraKeys: {"Ctrl-Space": "autocomplete"}
         });
+
+        function runCodeLocally() {
+            let code = editor.getValue();
+            let outputElement = document.getElementById("output");
+            outputElement.innerText = "Running...";
+
+            try {
+                let result = eval(code);
+                outputElement.innerText = result;
+            } catch (err) {
+                outputElement.innerText = err;
+            }
+        }
 
         function saveCode() {
             var username = document.getElementById("username").value;
@@ -176,6 +190,7 @@
             }
         }
 
+        document.getElementById("runButton").onclick = runCodeLocally;
         document.getElementById("saveButton").onclick = saveCode;
         document.getElementById("loadButton").onclick = loadCode;
 
