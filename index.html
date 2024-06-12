@@ -257,7 +257,7 @@ def is_prime(num):
     if num <= 1:
         return False
     for i in range(2, int(num**0.5) + 1):
-        if num % i == 0):
+        if num % i == 0:
             return False
     return True
 
@@ -279,7 +279,7 @@ def multiply(a, b):
     return a * b
 
 def divide(a, b):
-    if b != 0):
+    if b != 0:
         return a / b
     else:
         return "Cannot divide by zero"
@@ -298,11 +298,11 @@ print("Division:", divide(num1, num2))`);
         });
 
         function showSuggestions(editor) {
-            CodeMirror.showHint(editor, CodeMirror.hint.python);
+            CodeMirror.showHint(editor, CodeMirror.hint.python, { completeSingle: false });
         }
 
         editor.on("inputRead", function(instance, event) {
-            if (event.origin === "delete" || event.origin === "+input") {
+            if (event.origin === "+input" && /^[a-zA-Z]$/.test(event.text[0])) {
                 showSuggestions(instance);
             }
         });
