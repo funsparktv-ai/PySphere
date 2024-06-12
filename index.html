@@ -107,28 +107,19 @@
             margin-right: 10px;
         }
 
-        .input-container {
-            display: flex;
-            justify-content: space-between;
-            margin-top: 20px;
-        }
-
-        input {
+        #username {
             padding: 10px;
             font-size: 16px;
+            margin-right: 10px;
             border: 1px solid var(--editor-border);
             border-radius: 4px;
-            width: calc(50% - 10px);
         }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>PySphere - An Online Python Interpreter</h1>
-        <div class="input-container">
-            <input type="text" id="username" placeholder="Enter Username">
-            <input type="password" id="password" placeholder="Enter Password">
-        </div>
+        <input type="text" id="username" placeholder="Enter Username">
         <textarea id="code" name="code"></textarea>
         <div class="button-container">
             <select id="presetCodes">
@@ -149,10 +140,10 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/codemirror.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/mode/python/python.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/addon/hint/show-hint.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/pyodide@0.18.1/pyodide.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/addon/hint/python-hint.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/pyodide@0.23.0/pyodide.js"></script>
     <script>
-        let pyodideReadyPromise = loadPyodide();
-        let editor = CodeMirror.fromTextArea(document.getElementById('code'), {
+        var editor = CodeMirror.fromTextArea(document.getElementById('code'), {
             mode: "python",
             theme: "eclipse",
             lineNumbers: true,
@@ -162,45 +153,48 @@
             extraKeys: {"Ctrl-Space": "autocomplete"}
         });
 
-        document.getElementById("runButton").onclick = async function() {
-            await pyodideReadyPromise;
-            const pyodide = await loadPyodide();
+        async function loadPyodideAndPackages() {
+            window.pyodide = await loadPyodide();
+        }
+
+        async function runCode() {
+            await loadPyodideAndPackages();
             let code = editor.getValue();
+            let outputElement = document.getElementById("output");
+            outputElement.innerText = "Running...";
+
             try {
-                let output = await pyodide.runPythonAsync(code);
-                document.getElementById("output").innerText = output;
+                let results = await pyodide.runPythonAsync(code);
+                outputElement.innerText = results;
             } catch (err) {
-                document.getElementById("output").innerText = err;
+                outputElement.innerText = err;
             }
-        };
+        }
+
+        document.getElementById("runButton").onclick = runCode;
 
         function saveCode() {
-            let username = document.getElementById('username').value;
-            let password = document.getElementById('password').value;
-            let code = editor.getValue();
-            if (username && password) {
-                let data = { password, code };
-                localStorage.setItem(username, JSON.stringify(data));
-                alert('Code saved successfully.');
+            var username = document.getElementById("username").value;
+            if (username) {
+                localStorage.setItem('pythonCode_' + username, editor.getValue());
+                alert("Code saved for user: " + username);
             } else {
-                alert('Please enter username and password.');
+                alert("Please enter a username to save your code.");
             }
         }
 
         function loadCode() {
-            let username = document.getElementById('username').value;
-            let password = document.getElementById('password').value;
-            let savedData = localStorage.getItem(username);
-            if (savedData) {
-                let data = JSON.parse(savedData);
-                if (data.password === password) {
-                    editor.setValue(data.code);
-                    alert('Code loaded successfully.');
+            var username = document.getElementById("username").value;
+            if (username) {
+                var storedCode = localStorage.getItem('pythonCode_' + username);
+                if (storedCode) {
+                    editor.setValue(storedCode);
+                    alert("Code loaded for user: " + username);
                 } else {
-                    alert('Incorrect password.');
+                    alert("No code found for user: " + username);
                 }
             } else {
-                alert('No code found for this username.');
+                alert("Please enter a username to load your code.");
             }
         }
 
@@ -263,7 +257,7 @@ def is_prime(num):
     if num <= 1:
         return False
     for i in range(2, int(num**0.5) + 1):
-        if num % i == 0:
+        if num % i == 0):
             return False
     return True
 
@@ -285,7 +279,7 @@ def multiply(a, b):
     return a * b
 
 def divide(a, b):
-    if b != 0:
+    if b != 0):
         return a / b
     else:
         return "Cannot divide by zero"
@@ -312,6 +306,9 @@ print("Division:", divide(num1, num2))`);
                 showSuggestions(instance);
             }
         });
+
+        // Load Pyodide on page load
+        loadPyodideAndPackages();
     </script>
 </body>
 </html>
