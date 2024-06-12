@@ -145,6 +145,7 @@
             </select>
             <button id="runButton">Run Locally</button>
             <button id="saveButton">Save</button>
+            <button id="shareButton">Share Code</button>
             <button id="themeToggle">Toggle Dark Mode</button>
         </div>
         <pre id="output"></pre>
@@ -308,7 +309,7 @@ print(divide(10, 2))`);
         });
 
         function showSuggestions(editor) {
-            var keywords = ["print", "for", "if", "else", "elif", "while", "def", "class", "return", "import"];
+            var keywords = ["print", "for", "if", "else", "elif", "while", "def", "class", "return", "import", "from", "as", "with", "pass", "break", "continue", "try", "except", "finally", "raise", "global", "nonlocal", "assert", "yield", "lambda", "del", "True", "False", "None", "and", "or", "not", "is", "in", "self", "async", "await", "str", "int", "float", "list", "dict", "set", "tuple", "range", "len", "sum", "min", "max", "abs", "pow", "round", "sorted", "open", "input", "type", "id", "dir", "help", "isinstance", "hasattr", "getattr", "setattr", "delattr", "locals", "globals", "vars", "exec", "eval", "enumerate", "map", "filter", "reduce", "zip", "any", "all", "bin", "oct", "hex", "chr", "ord", "repr", "format", "memoryview", "bytearray", "bytes", "super", "property", "staticmethod", "classmethod", "staticmethod", "importlib", "itertools", "functools", "operator", "random", "math", "cmath", "decimal", "fractions", "statistics", "collections", "collections.abc", "heapq", "bisect", "array", "weakref", "types", "copy", "pprint", "reprlib", "enum", "numbers", "sys", "os", "io", "time", "threading", "multiprocessing", "subprocess", "sched", "signal", "contextlib", "abc", "atexit", "traceback", "warnings", "dataclasses", "pathlib", "typing", "unittest", "doctest", "pdb", "argparse", "configparser", "fileinput", "locale", "gettext", "string", "re", "struct", "codecs", "json", "pickle", "marshal", "sqlite3", "dbm", "zlib", "gzip", "bz2", "lzma", "shutil", "tarfile", "zipfile", "csv", "xml", "html", "http", "urllib", "webbrowser", "cgi", "cgitb", "wsgiref", "socket", "email", "mailbox", "smtplib", "poplib", "imaplib", "nntplib", "ftplib", "telnetlib", "uuid", "socketserver", "http.server", "http.client", "xmlrpc.client", "xmlrpc.server", "ipaddress", "hashlib", "hmac", "secrets", "ssl", "select", "selectors", "asyncio", "queue", "concurrent", "concurrent.futures", "contextvars", "asyncore", "asynchat", "tkinter", "turtle", "cmd", "shlex", "glob", "fnmatch", "tempfile", "datetime", "calendar", "zoneinfo", "abc", "argparse", "typing", "warnings", "traceback", "unittest", "doctest", "pdb", "inspect", "pyclbr", "sysconfig", "platform", "venv", "ensurepip", "distutils", "importlib", "zipimport", "pkgutil", "modulefinder"];
             var cursor = editor.getCursor();
             var token = editor.getTokenAt(cursor);
             var start = token.start;
@@ -341,6 +342,23 @@ print(divide(10, 2))`);
                 CodeMirror.commands.autocomplete(instance, null, { completeSingle: false });
             }
         });
+
+        // Share button functionality
+        document.getElementById("shareButton").onclick = function() {
+            var code = editor.getValue();
+            var encodedCode = encodeURIComponent(code);
+            var shareUrl = window.location.origin + window.location.pathname + "?code=" + encodedCode;
+            prompt("Copy this link to share your code:", shareUrl);
+        };
+
+        // Load code from URL
+        window.onload = function() {
+            var urlParams = new URLSearchParams(window.location.search);
+            var code = urlParams.get('code');
+            if (code) {
+                editor.setValue(decodeURIComponent(code));
+            }
+        };
     </script>
 </body>
 </html>
