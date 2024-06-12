@@ -59,7 +59,7 @@
         }
 
         .CodeMirror {
-            height: auto;
+            height: 500px;
             background-color: var(--editor-bg);
             border: 1px solid var(--editor-border);
             border-radius: 4px;
@@ -156,29 +156,17 @@
     <script src="https://cdn.jsdelivr.net/npm/skulpt@1.0.0/dist/skulpt.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/skulpt@1.0.0/dist/skulpt-stdlib.js"></script>
     <script>
-        var editor;
+        var editor = CodeMirror.fromTextArea(document.getElementById('code'), {
+            mode: "python",
+            theme: "eclipse",
+            lineNumbers: true,
+            autoCloseBrackets: true,
+            matchBrackets: true,
+            showCursorWhenSelecting: true,
+            extraKeys: {"Ctrl-Space": "autocomplete"}
+        });
 
-        function initializeEditor() {
-            editor = CodeMirror.fromTextArea(document.getElementById('code'), {
-                mode: "python",
-                theme: "eclipse",
-                lineNumbers: true,
-                autoCloseBrackets: true,
-                matchBrackets: true,
-                showCursorWhenSelecting: true,
-                extraKeys: {"Ctrl-Space": "autocomplete"}
-            });
-
-            editor.on("inputRead", function(instance, event) {
-                if (event.origin === "delete" || event.origin === "+input") {
-                    showSuggestions(instance);
-                }
-            });
-        }
-
-        function getUsername() {
-            return document.getElementById('username').value;
-        }
+        var globalScope = {};
 
         function builtinRead(x) {
             if (Sk.builtinFiles === undefined || Sk.builtinFiles["files"][x] === undefined)
@@ -196,11 +184,12 @@
                 return Sk.importMainWithBody("<stdin>", false, prog, true);
             });
             myPromise.then(function(mod) {
+                globalScope = mod.$d;
                 console.log('success');
             },
-            function(err) {
-                mypre.innerHTML = err.toString();
-            });
+                function(err) {
+                    mypre.innerHTML = err.toString();
+                });
         }
 
         function outf(text) {
@@ -208,30 +197,32 @@
             mypre.innerHTML += text;
         }
 
-        function saveCode() {
-            if (!getUsername()) {
-                alert('Please enter a username');
-                return;
+        document.getElementById("runButton").onclick = runCode;
+        document.getElementById("saveButton").onclick = function() {
+            var username = document.getElementById('username').value;
+            if (username.trim()) {
+                localStorage.setItem(username + '_pythonCode', editor.getValue());
+            } else {
+                alert('Please enter a username to save your code.');
             }
-            localStorage.setItem('pythonCode_' + getUsername(), editor.getValue());
-        }
-
-        function loadCode() {
-            if (!getUsername()) return;
-            var code = localStorage.getItem('pythonCode_' + getUsername());
-            if (code) {
-                editor.setValue(code);
-            }
-        }
-
-        window.onload = function() {
-            initializeEditor();
-            loadCode();
         };
 
-        document.getElementById("username").addEventListener("change", loadCode);
-        document.getElementById("runButton").onclick = runCode;
-        document.getElementById("saveButton").onclick = saveCode;
+        function loadCode() {
+            var username = document.getElementById('username').value;
+            if (username.trim()) {
+                var storedCode = localStorage.getItem(username + '_pythonCode');
+                if (storedCode) {
+                    editor.setValue(storedCode);
+                } else {
+                    alert('No saved code found for this username.');
+                }
+            } else {
+                alert('Please enter a username to load your code.');
+            }
+        }
+
+        document.getElementById('username').addEventListener('blur', loadCode);
+
         document.getElementById("themeToggle").addEventListener("click", function() {
             document.body.classList.toggle("dark-mode");
         });
@@ -262,41 +253,34 @@ def remove_item(key):
     if key in storage:
         del storage[key]
 
-# Example Usage:
-add_item("name", "John")
-add_item("age", 30)
-print(get_item("name"))
-print(get_item("age"))
-remove_item("age")
-print(get_item("age"))`);
+# Example usage
+add_item('name', 'John Doe')
+print(get_item('name'))
+remove_item('name')`);
                     break;
                 case "fibonacciSequence":
                     editor.setValue(`# Fibonacci Sequence
 def fibonacci(n):
-    fib_seq = [0, 1]
-    for i in range(2, n):
-        fib_seq.append(fib_seq[i-1] + fib_seq[i-2])
-    return fib_seq
+    sequence = [0, 1]
+    while len(sequence) < n:
+        sequence.append(sequence[-1] + sequence[-2])
+    return sequence
 
-n = int(input("Enter the number of terms: "))
-print("Fibonacci Sequence:")
+n = int(input("Enter the number of Fibonacci numbers to generate: "))
 print(fibonacci(n))`);
                     break;
                 case "primeChecker":
                     editor.setValue(`# Prime Number Checker
-def is_prime(num):
-    if num <= 1:
+def is_prime(n):
+    if n <= 1:
         return False
-    for i in range(2, int(num**0.5) + 1):
-        if num % i == 0:
+    for i in range(2, int(n ** 0.5) + 1):
+        if n % i == 0:
             return False
     return True
 
-num = int(input("Enter a number: "))
-if is_prime(num):
-    print(num, "is a prime number")
-else:
-    print(num, "is not a prime number")`);
+num = int(input("Enter a number to check if it is prime: "))
+print(f"{num} is prime: {is_prime(num)}")`);
                     break;
                 case "basicCalculator":
                     editor.setValue(`# Basic Calculator
@@ -310,48 +294,26 @@ def multiply(a, b):
     return a * b
 
 def divide(a, b):
-    if b != 0:
-        return a / b
-    else:
-        return "Cannot divide by zero"
+    if b == 0:
+        return "Cannot divide by zero!"
+    return a / b
 
-num1 = float(input("Enter first number: "))
-num2 = float(input("Enter second number: "))
-
-print("Addition:", add(num1, num2))
-print("Subtraction:", subtract(num1, num2))
-print("Multiplication:", multiply(num1, num2))
-print("Division:", divide(num1, num2))`);
-                    break;
-                default:
+# Example usage
+print(add(2, 3))
+print(subtract(5, 2))
+print(multiply(3, 4))
+print(divide(10, 2))`);
                     break;
             }
         });
 
-        function showSuggestions(editor) {
-            CodeMirror.showHint(editor, function(cm, options) {
-                var cursor = cm.getCursor();
-                var token = cm.getTokenAt(cursor);
-                var start = token.start;
-                var end = cursor.ch;
-                var word = token.string;
-
-                var list = [
-                    'def', 'class', 'if', 'elif', 'else', 'for', 'while', 'return',
-                    'import', 'from', 'as', 'print', 'input', 'True', 'False', 'None',
-                    'and', 'or', 'not', 'in', 'is', 'break', 'continue', 'pass',
-                    'int', 'float', 'str', 'list', 'dict', 'set', 'tuple', 'len', 'range'
-                ].filter(function(item) {
-                    return item.indexOf(word) === 0;
-                }).sort();
-
-                return {
-                    list: list,
-                    from: CodeMirror.Pos(cursor.line, start),
-                    to: CodeMirror.Pos(cursor.line, end)
-                };
-            }, {completeSingle: false});
-        }
+        // Load code from localStorage on page load if username is provided
+        window.onload = function() {
+            var username = document.getElementById('username').value;
+            if (username.trim()) {
+                loadCode();
+            }
+        };
     </script>
 </body>
 </html>
