@@ -3,13 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PySphere - An Online Python Editor</title>
+    <title>PySphere - An Online Python Interpreter</title>
     <link href="https://fonts.googleapis.com/css2?family=Segoe+UI:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/codemirror.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/theme/eclipse.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/theme/monokai.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/addon/hint/show-hint.min.css">
-    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/brython@3.9.5/brython.min.js"></script>
     <style>
         :root {
             --bg-color: #ffffff;
@@ -108,19 +107,32 @@
             margin-right: 10px;
         }
 
-        #username {
-            padding: 10px;
-            font-size: 16px;
+        .username-input {
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .username-input label {
             margin-right: 10px;
+        }
+
+        .username-input input {
+            padding: 8px;
+            font-size: 16px;
             border: 1px solid var(--editor-border);
             border-radius: 4px;
         }
     </style>
 </head>
-<body onload="brython()">
+<body>
     <div class="container">
-        <h1>PySphere - An Online Python Editor</h1>
-        <input type="text" id="username" placeholder="Enter Username">
+        <h1>PySphere - An Online Python Interpreter</h1>
+        <div class="username-input">
+            <label for="username">Username:</label>
+            <input type="text" id="username" name="username" placeholder="Enter your username">
+        </div>
         <textarea id="code" name="code"></textarea>
         <div class="button-container">
             <select id="presetCodes">
@@ -133,7 +145,6 @@
             </select>
             <button id="runButton">Run Locally</button>
             <button id="saveButton">Save</button>
-            <button id="loadButton">Load</button>
             <button id="themeToggle">Toggle Dark Mode</button>
         </div>
         <pre id="output"></pre>
@@ -142,6 +153,8 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/mode/python/python.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/addon/hint/show-hint.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.5/addon/hint/python-hint.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/skulpt@1.0.0/dist/skulpt.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/skulpt@1.0.0/dist/skulpt-stdlib.js"></script>
     <script>
         var editor = CodeMirror.fromTextArea(document.getElementById('code'), {
             mode: "python",
@@ -153,28 +166,46 @@
             extraKeys: {"Ctrl-Space": "autocomplete"}
         });
 
-        function runCodeLocally() {
-            let code = editor.getValue();
-            let outputElement = document.getElementById("output");
-            outputElement.innerText = "Running...";
+        var globalScope = {};
 
-            try {
-                let output = __BRYTHON__.py2js(code).to_js();
-                outputElement.innerText = output;
-            } catch (err) {
-                outputElement.innerText = err;
-            }
+        function builtinRead(x) {
+            if (Sk.builtinFiles === undefined || Sk.builtinFiles["files"][x] === undefined)
+                throw "File not found: '" + x + "'";
+            return Sk.builtinFiles["files"][x];
         }
 
-        function saveCode() {
+        function runCode() {
+            var prog = editor.getValue();
+            var mypre = document.getElementById("output");
+            mypre.innerHTML = '';
+            Sk.pre = "output";
+            Sk.configure({ output: outf, read: builtinRead });
+            var myPromise = Sk.misceval.asyncToPromise(function() {
+                return Sk.importMainWithBody("<stdin>", false, prog, true);
+            });
+            myPromise.then(function(mod) {
+                globalScope = mod.$d;
+                console.log('success');
+            },
+                function(err) {
+                    mypre.innerHTML = err.toString();
+                });
+        }
+
+        function outf(text) {
+            var mypre = document.getElementById("output");
+            mypre.innerHTML += text;
+        }
+
+        document.getElementById("runButton").onclick = runCode;
+        document.getElementById("saveButton").onclick = function() {
             var username = document.getElementById("username").value;
             if (username) {
                 localStorage.setItem('pythonCode_' + username, editor.getValue());
-                alert("Code saved for user: " + username);
             } else {
-                alert("Please enter a username to save your code.");
+                alert("Please enter a username before saving.");
             }
-        }
+        };
 
         function loadCode() {
             var username = document.getElementById("username").value;
@@ -182,18 +213,28 @@
                 var storedCode = localStorage.getItem('pythonCode_' + username);
                 if (storedCode) {
                     editor.setValue(storedCode);
-                    alert("Code loaded for user: " + username);
                 } else {
-                    alert("No code found for user: " + username);
+                    editor.setValue('');
                 }
-            } else {
-                alert("Please enter a username to load your code.");
             }
         }
 
-        document.getElementById("runButton").onclick = runCodeLocally;
-        document.getElementById("saveButton").onclick = saveCode;
-        document.getElementById("loadButton").onclick = loadCode;
+        document.getElementById("username").addEventListener("change", loadCode);
+
+        window.onload = function() {
+            var storedUsername = localStorage.getItem('currentUsername');
+            if (storedUsername) {
+                document.getElementById("username").value = storedUsername;
+                loadCode();
+            }
+        }
+
+        window.onbeforeunload = function() {
+            var username = document.getElementById("username").value;
+            if (username) {
+                localStorage.setItem('currentUsername', username);
+            }
+        };
 
         document.getElementById("themeToggle").addEventListener("click", function() {
             document.body.classList.toggle("dark-mode");
@@ -250,8 +291,8 @@ print(fibonacci(n))`);
 def is_prime(num):
     if num <= 1:
         return False
-    for i in range(2, int(num ** 0.5) + 1):
-        if num % i == 0:
+    for i in range(2, int(num**0.5) + 1):
+        if num % i == 0):
             return False
     return True
 
@@ -273,7 +314,7 @@ def multiply(a, b):
     return a * b
 
 def divide(a, b):
-    if b != 0):
+    if b != 0:
         return a / b
     else:
         return "Cannot divide by zero"
@@ -292,11 +333,11 @@ print("Division:", divide(num1, num2))`);
         });
 
         function showSuggestions(editor) {
-            CodeMirror.showHint(editor, CodeMirror.hint.python, { completeSingle: false });
+            CodeMirror.showHint(editor, CodeMirror.hint.python);
         }
 
         editor.on("inputRead", function(instance, event) {
-            if (event.origin === "+input" && /^[a-zA-Z]$/.test(event.text[0])) {
+            if (event.origin === "delete" || event.origin === "+input") {
                 showSuggestions(instance);
             }
         });
